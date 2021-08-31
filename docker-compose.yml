@@ -1,0 +1,33 @@
+version: "2.4"
+
+services:
+  edge-influxdb2:
+    image: influxdb:2.0.8-alpine
+    container_name:  edge-influxdb2
+    restart: always
+    environment: 
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=industrialedge
+      - DOCKER_INFLUXDB_INIT_PASSWORD=industrialedge
+      - DOCKER_INFLUXDB_INIT_ORG=industrialedge
+      - DOCKER_INFLUXDB_INIT_BUCKET=industrialedge
+      - DOCKER_INFLUXDB_INIT_RETENTION=365d
+    ports:
+      - 38086:8086
+    volumes:
+      - edge-influxdb2-data:/var/lib/influxdb2
+      - edge-influxdb2-config:/etc/influxdb2
+    networks: 
+      - proxy-redirect
+    mem_limit: 1300m
+
+volumes:
+  edge-influxdb2-data:
+    name: edge-influxdb2-data
+  edge-influxdb2-config:
+    name: edge-influxdb2-config
+
+networks: 
+  proxy-redirect:
+    external: true
+    name: proxy-redirect

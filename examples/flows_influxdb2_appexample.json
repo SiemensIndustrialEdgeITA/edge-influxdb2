@@ -1,0 +1,504 @@
+[
+    {
+        "id": "fce38304.fdfcd",
+        "type": "tab",
+        "label": "S7 - InfluxDB2 App Example",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "2a9e39c7.f1f666",
+        "type": "debug",
+        "z": "fce38304.fdfcd",
+        "name": "",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 510,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "79f6115f.9d8b4",
+        "type": "mqtt in",
+        "z": "fce38304.fdfcd",
+        "name": "",
+        "topic": "ie/d/j/simatic/v1/s7c1/dp/r/1516_S7PLUS/default",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "163f80f6.8d5c0f",
+        "x": 220,
+        "y": 240,
+        "wires": [
+            [
+                "2a9e39c7.f1f666",
+                "dbdaed32.ecaa5"
+            ]
+        ]
+    },
+    {
+        "id": "591ffab2.efd724",
+        "type": "comment",
+        "z": "fce38304.fdfcd",
+        "name": "Get data as bulk from S7 Connector",
+        "info": "## Description\nHere we will receive messages from MQTT IE Databus, that contains all data read by the S7-1500 PLC configured within the S7 Connector application. The PLC Name configured will be part of the topic to be subscribed.\n\n## Example Topic\n`ie/d/j/simatic/v1/s7c1/dp/r/1516_UA/default`\n\n## Example Output\n```\n{\n  \"topic\": \"ie/d/j/simatic/v1/s7c1/dp/r/1516_UA/default\",\n  \"payload\": {\n    \"seq\": 44093,\n    \"vals\": [\n      {\n        \"id\": 101,\n        \"qc\": 3,\n        \"ts\": \"2021-03-06T09:17:05.347Z\",\n        \"val\": 4728.96337890625\n      },\n      {\n        \"id\": 102,\n        \"qc\": 3,\n        \"ts\": \"2021-03-06T09:17:05.347Z\",\n        \"val\": 7141.59326171875\n      }\n    ]\n  }\n}\n```",
+        "x": 180,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "e2a1a1f7.d218a",
+        "type": "comment",
+        "z": "fce38304.fdfcd",
+        "name": "Map Data in Measurements",
+        "info": "## Description\nHere we will transform the received payload from MQTT IE Databus, that contains all data read by the S7-1500 PLC configured within the S7 Connector application, into a message matching the standard required by the **\"influx-out**\" node.\nFor the \"influx-out\" node, the `msg.payload` is an object containing multiple properties, all fields will be written in the measure.\nWe will transform the `id` key of the received variable into the name of the \"influxDB field\" (with a replace prefix) and the `val` key will be approximated to 3 decimal places.\nThe measurement name is set with `msg.measurement` property.\n\n## Example Input\n```\n{\n  \"topic\": \"ie/d/j/simatic/v1/s7c1/dp/r/1516_UA/default\",\n  \"payload\": {\n    \"seq\": 44093,\n    \"vals\": [\n      {\n        \"id\": \"BigData_Real600_0\",\n        \"qc\": 3,\n        \"ts\": \"2021-03-06T09:17:05.347Z\",\n        \"val\": \"4728.96337890625\"\n      },\n      {\n        \"id\": \"BigData_Real600_1\",\n        \"qc\": 3,\n        \"ts\": \"2021-03-06T09:17:05.347Z\",\n        \"val\": \"7141.59326171875\"\n      }\n    ]\n  }\n}\n```\n\n## Example Output\n```\n{\n  \"measurement\": \"real600\",\n  \"payload\": {\n    \"R_0\": 4728.963,\n    \"R_1\": 7141.593\n  }\n}\n```",
+        "x": 580,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "a2ec9800.afd828",
+        "type": "comment",
+        "z": "fce38304.fdfcd",
+        "name": "Buffer and send data to InfluxDB App",
+        "info": "## Description\nThe `influxdb out` node can write values and tags to an influxdb measurement.\nThe fields and tags to write are in msg.payload. \nIn this case, msg.payload is an object containing multiple properties, the fields that will be written to the measurement.\nIf the measurement field is not set in the node configuration, the user can send in data with a specified measurement name in `msg.measurement` to overwrite the measurement field in the configuration of the node.\n\nWe will use the node in **InfluxDB 1.x Mode**.\nIn the Advanced Query Options the time precision of seconds is specified \nIf no retention policy is specified, autogen will be assumed.\n\n## Example Input\n```\n{\n  \"measurement\": \"real600\",\n  \"payload\": {\n    \"R_0\": 4728.963,\n    \"R_1\": 7141.593\n  }\n}\n```",
+        "x": 880,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "c52c18b6.f68d78",
+        "type": "inject",
+        "z": "fce38304.fdfcd",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "30",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 460,
+        "wires": [
+            [
+                "b28324fe.682ab8"
+            ]
+        ]
+    },
+    {
+        "id": "99a24e71.0266d",
+        "type": "comment",
+        "z": "fce38304.fdfcd",
+        "name": "Trigger every 30 sec",
+        "info": "",
+        "x": 121,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "3344b660.a1321a",
+        "type": "comment",
+        "z": "fce38304.fdfcd",
+        "name": "Get data from InfluxDB",
+        "info": "",
+        "x": 400,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "d7ee80ac.f7735",
+        "type": "debug",
+        "z": "fce38304.fdfcd",
+        "name": "",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 810,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "19356721.b83ac9",
+        "type": "function",
+        "z": "fce38304.fdfcd",
+        "name": "Create S7ConnectionMap Variable",
+        "func": "// Create an object that contains each S7 Connector connection property\n// with different Map Objects to create correspondence between Tags IDs, Names and Types.\n\n\n// initialize the connections Mapping Object\nlet S7ConnectionMap = {\n    \"nameList\":[],      // array of available S7 Connections names. Order is the same in Map objects below.\n    \"typeList\":[],      // array of available S7 Connections types. Order is the same of nameList..\n    \"nameIDMaps\":[],    // array of Tags Names-IDs object. Order is the same of nameList.\n    \"IDnameMaps\":[],     // array of Tags IDs-Names Map object. Order is the same of nameList.\n    \"IDTypeMaps\":[]     // array of Tags IDs-Type Map object. Order is the same of nameList.    \n}\n\n// Check Payload\nlet m = msg.payload;\nif (m.seq == undefined) {\n    // update global maps\n    flow.set(\"S7ConnectionMap\", null);\n    // update function node status\n    node.status({fill:\"red\",shape:\"ring\",text:\"S7Map cannot be created\"});\n    \n    return null;\n}  \n\n// Iterate through connections\nfor (let i = 0; i < m.connections.length; i++)\n{\n    let connection = m.connections[i];\n    // push connection name and type in global object\n    S7ConnectionMap.nameList.push(connection.name);\n    S7ConnectionMap.typeList.push(connection.type);\n    // init maps\n    let nameIDMap = new Map();\n    let IDNameMap = new Map();\n    let IDTypeMap = new Map();\n    \n    // Iterate through dataPoints\n    let dataPoints = connection.dataPoints;\n    for (let j = 0; j < dataPoints.length; j++)\n    {\n        let dataPoint = dataPoints[j];\n        // Iterate through dataPointDefinitions\n        let dataPointDefinitions = dataPoint.dataPointDefinitions;\n        for (let k = 0; k < dataPointDefinitions.length; k++)\n        {\n            let dataPointDefinition = dataPointDefinitions[k];\n            // push in maps the datapoint property\n            nameIDMap.set(dataPointDefinition.name, dataPointDefinition.id);\n            IDNameMap.set(dataPointDefinition.id, dataPointDefinition.name);\n            IDTypeMap.set(dataPointDefinition.id, dataPointDefinition.dataType);        \n        }\n    }\n    // push mappings in global object\n    S7ConnectionMap.nameIDMaps.push(nameIDMap);\n    S7ConnectionMap.IDnameMaps.push(IDNameMap);\n    S7ConnectionMap.IDTypeMaps.push(IDTypeMap);\n}\n\n\n// update global maps\nflow.set(\"S7ConnectionMap\", S7ConnectionMap);\n\n// set S7Map as output payload\nmsg.payload = S7ConnectionMap;\n\n// update function node status\nnode.status({fill:\"green\",shape:\"ring\",text:\"S7ConnectionMap created for \" + S7ConnectionMap.nameList.join()});\n\nreturn msg;\n\n\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 440,
+        "y": 100,
+        "wires": [
+            [
+                "3be6d6b7.31ac0a"
+            ]
+        ]
+    },
+    {
+        "id": "3be6d6b7.31ac0a",
+        "type": "debug",
+        "z": "fce38304.fdfcd",
+        "name": "",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 650,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "dc33b6de.b599e8",
+        "type": "mqtt in",
+        "z": "fce38304.fdfcd",
+        "name": "",
+        "topic": "ie/m/j/simatic/v1/s7c1/dp",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "163f80f6.8d5c0f",
+        "x": 150,
+        "y": 100,
+        "wires": [
+            [
+                "19356721.b83ac9"
+            ]
+        ]
+    },
+    {
+        "id": "adf4804b.3ca2b",
+        "type": "influxdb out",
+        "z": "fce38304.fdfcd",
+        "influxdb": "fee03a9c.fcb198",
+        "name": "",
+        "measurement": "production",
+        "precision": "s",
+        "retentionPolicy": "",
+        "database": "database",
+        "precisionV18FluxV20": "ms",
+        "retentionPolicyV18Flux": "",
+        "org": "industrialedge",
+        "bucket": "industrialedge",
+        "x": 1010,
+        "y": 240,
+        "wires": []
+    },
+    {
+        "id": "bcfff96a.b317c8",
+        "type": "influxdb in",
+        "z": "fce38304.fdfcd",
+        "influxdb": "fee03a9c.fcb198",
+        "name": "",
+        "query": "",
+        "rawOutput": false,
+        "precision": "",
+        "retentionPolicy": "",
+        "org": "industrialedge",
+        "x": 590,
+        "y": 460,
+        "wires": [
+            [
+                "d7ee80ac.f7735"
+            ]
+        ]
+    },
+    {
+        "id": "b2598f87.72687",
+        "type": "comment",
+        "z": "fce38304.fdfcd",
+        "name": "Get metadata from S7",
+        "info": "",
+        "x": 140,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "b28324fe.682ab8",
+        "type": "function",
+        "z": "fce38304.fdfcd",
+        "name": "create query",
+        "func": "\n// SET HERE TTMEZONE OFFSET HOURS\n//let timezoneOffsetHours = \"2\";\n// SET HERE RANGE OF TIME (in seconds) TO BE QUERIED I\nlet timeRange = 60;\n\n// STOP is actual time in UTC\nlet stop = new Date().getTime();\n// START is STOP minus the configured range time\nlet start = stop - timeRange * 1000;\n//  '|> range(start: ' + start + ', stop: ' + stop + ')' +\n\n// create the query based on start and stop time\nlet query = 'from(bucket: \"industrialedge\")' +\n  '|> range(start: -30s, stop: now())' +\n  '|> filter(fn: (r) => r[\"_measurement\"] == \"production\")' + \n  '|> filter(fn: (r) => r[\"_field\"] == \"Production_BadPieces\" ' + \n                        'or r[\"_field\"] == \"Production_GoodPieces\" ' + \n                        'or r[\"_field\"] == \"Production_MachSpeed\")';\n\n// set out message query propoerty for influxdb node\nmsg.query = query;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 330,
+        "y": 460,
+        "wires": [
+            [
+                "bcfff96a.b317c8"
+            ]
+        ]
+    },
+    {
+        "id": "cbe2c710.92f5b8",
+        "type": "comment",
+        "z": "fce38304.fdfcd",
+        "name": "Get Alerts from InfluxDB",
+        "info": "",
+        "x": 140,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "12fba4a7.97083b",
+        "type": "mqtt in",
+        "z": "fce38304.fdfcd",
+        "name": "",
+        "topic": "influxdb2/alerts/#",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "163f80f6.8d5c0f",
+        "x": 120,
+        "y": 600,
+        "wires": [
+            [
+                "d99eedf.894eb1",
+                "1cd00d2d.91b0c3"
+            ]
+        ]
+    },
+    {
+        "id": "d99eedf.894eb1",
+        "type": "debug",
+        "z": "fce38304.fdfcd",
+        "name": "",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 310,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "1cd00d2d.91b0c3",
+        "type": "function",
+        "z": "fce38304.fdfcd",
+        "name": "convert InfluxDB Alerts table string to JSON",
+        "func": "// create table rows\nlet rows = [];\n\n// split each row of the table string\nlet strRows = msg.payload.split(\"\\n\");\n// get how many rows\nlet numRows = strRows.length - 1;\n\n// parse each table string row to JSON\nfor (let i=0; i < numRows; i++)\n{\n    // remove measurement name and field name\n    let tmpStr = strRows[i].replace(\"production alert_str=\\\"\",\"\");\n    // substring on closing bracket to remove time\n    tmpStr = (tmpStr.substring(0, tmpStr.indexOf(\"}\") + 1))\n    // fix double quotes and backslashes\n    tmpStr = tmpStr.replace(/\\\"/g, \"'\").replace(/\\\\/g,\"\").replace(/'/g,\"\\\"\");\n    // parse to json and push to rows array\n    let jsonAlert = JSON.parse(tmpStr)\n    rows.push(jsonAlert);\n}\n\n// formatted json rows as payload\nmsg.payload = rows;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 430,
+        "y": 600,
+        "wires": [
+            [
+                "f2de807a.b5be",
+                "491a5b0e.024d04"
+            ]
+        ]
+    },
+    {
+        "id": "f2de807a.b5be",
+        "type": "debug",
+        "z": "fce38304.fdfcd",
+        "name": "",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 710,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "491a5b0e.024d04",
+        "type": "ui_template",
+        "z": "fce38304.fdfcd",
+        "group": "5d25a775.a42098",
+        "name": "Alerts Table",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "format": "<style>\ntable, th, td {\n  border: 1px solid black;\n  border-collapse: collapse;\n}\nth, td {\n  padding: 15px;\n}\n</style>\n\n<div class=\"table-wrap\" style=\"  height: 500px; overflow-y: auto\">\n    <table>\n        <tr style=\"font-weight:800;\">\n            <td>Time</td>\n            <td>MachSpeed</td>\n            <td>Threshold</td>\n            <td>Alert Text</td>\n            <td>GoodPieces</td>\n            <td>BadPieces</td>\n        </tr>\n        <tr ng-repeat=\"row in msg.payload\">\n            <td>{{row.ts}}</td>\n            <td>{{row.Production_MachSpeed}}</td>\n            <td>{{row.threshold}}</td>\n            <td>MachSpeed={{row.Production_MachSpeed}} over threshold={{row.threshold}}.</td>\n            <td>{{row.Production_GoodPieces}}</td>\n            <td>{{row.Production_BadPieces}}</td>    \n        </tr>\n    </table>\n</div>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "x": 730,
+        "y": 600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "895e0ce8.7cd6c",
+        "type": "comment",
+        "z": "fce38304.fdfcd",
+        "name": "Display Table",
+        "info": "",
+        "x": 730,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "ee6dcff4.e8914",
+        "type": "join",
+        "z": "fce38304.fdfcd",
+        "name": "10 series batch",
+        "mode": "custom",
+        "build": "array",
+        "property": "payload",
+        "propertyType": "msg",
+        "key": "topic",
+        "joiner": "\\n",
+        "joinerType": "str",
+        "accumulate": false,
+        "timeout": "",
+        "count": "10",
+        "reduceRight": false,
+        "reduceExp": "",
+        "reduceInit": "",
+        "reduceInitType": "",
+        "reduceFixup": "",
+        "x": 760,
+        "y": 340,
+        "wires": [
+            [
+                "63a13ccd.57e3e4"
+            ]
+        ]
+    },
+    {
+        "id": "63a13ccd.57e3e4",
+        "type": "debug",
+        "z": "fce38304.fdfcd",
+        "name": "",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 950,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "dbdaed32.ecaa5",
+        "type": "function",
+        "z": "fce38304.fdfcd",
+        "name": "Production Data to InfluxDB Measurement",
+        "func": "// create out message\nlet outMsg = {\"payload\": null};\n\n// Insert here the ordered output tag list\nlet selectedTags = [\"Production_GoodPieces\",\n                    \"Production_BadPieces\",\n                    \"Production_MachSpeed\"];\n   \n// get S7Map variable\nlet S7ConnectionMap = flow.get(\"S7ConnectionMap\");\n\n// find index of 1516_S7PLUS connection\nlet connectionIndex = S7ConnectionMap.nameList.indexOf(\"1516_S7PLUS\");\n// use the index to get the right map\nlet nameIDMap = S7ConnectionMap.nameIDMaps[connectionIndex];\n\n// get IDs of selected Tags\nlet selectedIDs = selectedTags.map(name => nameIDMap.get(name));\n\n// create an empty series with null timestamp\nlet outSeries = [{\"time\": null}]\n\n// iterate through readed tags\nfor (let i=0; i < msg.payload.vals.length; i++){\n    \n    // iterate through selected ids\n    for(let j=0; j < selectedIDs.length; j++){\n    \n        // search for tagselectedTags[j]\n        if(msg.payload.vals[i].id == selectedIDs[j])\n        {\n            outSeries[0].time = new Date(Date.parse(msg.payload.vals[i].ts)).getTime();\n            outSeries[0][selectedTags[j]] = Number(msg.payload.vals[i].val.toFixed(2));\n\n            // stop on first match, ids are uniques\n            break;\n        }\n    }\n}\n\n// if time was changed means that some ids was finded\nif (outSeries[0].time)\n{\n    outMsg.payload = outSeries;\n    return outMsg;\n}\n\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "x": 620,
+        "y": 240,
+        "wires": [
+            [
+                "adf4804b.3ca2b",
+                "2cc1c455.ad67fc"
+            ]
+        ]
+    },
+    {
+        "id": "2cc1c455.ad67fc",
+        "type": "debug",
+        "z": "fce38304.fdfcd",
+        "name": "",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 890,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "163f80f6.8d5c0f",
+        "type": "mqtt-broker",
+        "name": "",
+        "broker": "ie-databus",
+        "port": "1883",
+        "tls": "",
+        "clientid": "",
+        "usetls": false,
+        "compatmode": false,
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": ""
+    },
+    {
+        "id": "fee03a9c.fcb198",
+        "type": "influxdb",
+        "hostname": "edge-influxdb",
+        "port": "8086",
+        "protocol": "http",
+        "database": "edge",
+        "name": "",
+        "usetls": false,
+        "tls": "",
+        "influxdbVersion": "2.0",
+        "url": "http://edge-influxdb2:8086",
+        "rejectUnauthorized": true
+    },
+    {
+        "id": "5d25a775.a42098",
+        "type": "ui_group",
+        "name": "Alerts List",
+        "tab": "641d0d86.aaabf4",
+        "order": 1,
+        "disp": true,
+        "width": "23",
+        "collapse": false
+    },
+    {
+        "id": "641d0d86.aaabf4",
+        "type": "ui_tab",
+        "name": "InfluxDB2",
+        "icon": "dashboard",
+        "order": 2,
+        "disabled": false,
+        "hidden": false
+    }
+]
